@@ -12,6 +12,8 @@ import time
 from utils import *
 
 openai.api_key = openai_api_key
+openai.api_base = openai_api_base
+openai.debug = True
 
 def temp_sleep(seconds=0.1):
   time.sleep(seconds)
@@ -46,7 +48,7 @@ def GPT4_request(prompt):
 
   try: 
     completion = openai.ChatCompletion.create(
-    model="gpt-4", 
+    model="gpt-4o", 
     messages=[{"role": "user", "content": prompt}]
     )
     return completion["choices"][0]["message"]["content"]
@@ -193,8 +195,7 @@ def ChatGPT_safe_generate_response_OLD(prompt,
 # ============================================================================
 # ###################[SECTION 2: ORIGINAL GPT-3 STRUCTURE] ###################
 # ============================================================================
-
-def GPT_request(prompt, gpt_parameter): 
+def GPT_requestold(prompt, gpt_parameter): 
   """
   Given a prompt and a dictionary of GPT parameters, make a request to OpenAI
   server and returns the response. 
@@ -220,8 +221,36 @@ def GPT_request(prompt, gpt_parameter):
                 stop=gpt_parameter["stop"],)
     return response.choices[0].text
   except: 
+    print (response)
     print ("TOKEN LIMIT EXCEEDED")
     return "TOKEN LIMIT EXCEEDED"
+
+def GPT_request(prompt, gpt_parameter): 
+  """
+  Given a prompt and a dictionary of GPT parameters, make a request to OpenAI
+  server and returns the response. 
+  ARGS:
+    prompt: a str prompt
+    gpt_parameter: a python dictionary with the keys indicating the names of  
+                   the parameter and the values indicating the parameter 
+                   values.   
+  RETURNS: 
+    a str of GPT-3's response. 
+  """
+
+  temp_sleep()
+
+  try: 
+    completion = openai.ChatCompletion.create(
+    model="gpt-4o",#gpt_parameter["engine"], 
+    messages=[{"role": "user", "content": prompt}]
+    )
+    return completion["choices"][0]["message"]["content"]
+  
+  except: 
+    print (completion)
+    print ("ChatGPT ERROR")
+    return "ChatGPT ERROR"
 
 
 def generate_prompt(curr_input, prompt_lib_file): 
@@ -282,7 +311,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
 
 
 if __name__ == '__main__':
-  gpt_parameter = {"engine": "text-davinci-003", "max_tokens": 50, 
+  gpt_parameter = {"engine": "text-davinci-003", "max_tokens": 500, 
                    "temperature": 0, "top_p": 1, "stream": False,
                    "frequency_penalty": 0, "presence_penalty": 0, 
                    "stop": ['"']}

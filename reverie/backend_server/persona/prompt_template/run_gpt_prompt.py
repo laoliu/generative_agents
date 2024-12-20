@@ -66,7 +66,7 @@ def run_gpt_prompt_wake_up_hour(persona, test_input=None, verbose=False):
     fs = 8
     return fs
 
-  gpt_param = {"engine": "text-davinci-002", "max_tokens": 5, 
+  gpt_param = {"engine": "gpt-3.5-turbo", "max_tokens": 50000, 
              "temperature": 0.8, "top_p": 1, "stream": False,
              "frequency_penalty": 0, "presence_penalty": 0, "stop": ["\n"]}
   prompt_template = "persona/prompt_template/v2/wake_up_hour_v1.txt"
@@ -76,6 +76,15 @@ def run_gpt_prompt_wake_up_hour(persona, test_input=None, verbose=False):
 
   output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
                                    __func_validate, __func_clean_up)
+  
+  #output = GPT4_safe_generate_response(prompt, 
+  #                                 "run_gpt_prompt_wake_up_hour",
+  #                                 "xxx",
+  #                                 repeat=5,
+  #                                 fail_safe_response=fail_safe,
+  #                                 func_validate=__func_validate,
+  #                                 func_clean_up=__func_clean_up,
+  #                                 verbose=False)
   
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 
@@ -138,7 +147,7 @@ def run_gpt_prompt_daily_plan(persona,
 
 
   
-  gpt_param = {"engine": "text-davinci-003", "max_tokens": 500, 
+  gpt_param = {"engine": "gpt-4o", "max_tokens": 5000, 
                "temperature": 1, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/daily_planning_v6.txt"
@@ -148,6 +157,14 @@ def run_gpt_prompt_daily_plan(persona,
 
   output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
                                    __func_validate, __func_clean_up)
+  #output = GPT4_safe_generate_response(prompt, 
+  #                                 "run_gpt_prompt_daily_plan",
+  #                                 "xxx",
+  #                                 repeat=5,
+  #                                 fail_safe_response=fail_safe,
+  #                                 func_validate=__func_validate,
+  #                                 func_clean_up=__func_clean_up,
+  #A                                 verbose=False)
   output = ([f"wake up and complete the morning routine at {wake_up_hour}:00 am"]
               + output)
 
@@ -265,7 +282,7 @@ def run_gpt_prompt_generate_hourly_schedule(persona,
   # # ChatGPT Plugin ===========================================================
 
 
-  gpt_param = {"engine": "text-davinci-003", "max_tokens": 50, 
+  gpt_param = {"engine": "text-davinci-003", "max_tokens": 500, 
                "temperature": 0.5, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": ["\n"]}
   prompt_template = "persona/prompt_template/v2/generate_hourly_schedule_v2.txt"
@@ -357,9 +374,12 @@ def run_gpt_prompt_task_decomp(persona,
     return prompt_input
 
   def __func_clean_up(gpt_response, prompt=""):
-    print ("TOODOOOOOO")
+    print ("TOODOOOOOO cleanup")
     print (gpt_response)
     print ("-==- -==- -==- ")
+    if gpt_response == "TOKEN LIMIT EXCEEDED":
+      print ("-==- -==- -==- end")
+      return 
 
     # TODO SOMETHING HERE sometimes fails... See screenshot
     temp = [i.strip() for i in gpt_response.split("\n")]
@@ -373,10 +393,14 @@ def run_gpt_prompt_task_decomp(persona,
     for count, i in enumerate(_cr): 
       k = [j.strip() for j in i.split("(duration in minutes:")]
       task = k[0]
-      if task[-1] == ".": 
-        task = task[:-1]
-      duration = int(k[1].split(",")[0].strip())
-      cr += [[task, duration]]
+      if task != None and len(task)>0:
+        if task[-1] == ".": 
+          task = task[:-1]
+        try:
+          duration = int(k[1].split(",")[0].strip())
+          cr += [[task, duration]]
+        except:
+          pass
 
     total_expected_min = int(prompt.split("(total duration in minutes")[-1]
                                    .split("):")[0].strip())
@@ -454,6 +478,9 @@ def run_gpt_prompt_task_decomp(persona,
   # print (prompt_input)
   # print (prompt)
   print (output)
+  if output == None:
+    print ("IMPORTANT VVV DEBUG end")
+    return
 
   fin_output = []
   time_sum = 0
